@@ -1,13 +1,31 @@
 import re
-import createDriver
+import os
+import requests
+from Utils import createDriver
 from urllib import request
+
+
+def download(url, songName, headers={}):
+    req_headers = None
+    if len(headers) > 0:
+        req_headers = headers
+    music = requests.get(url, headers)
+    parent_path = os.path.abspath('.')
+    song_url = parent_path + '/' + songName
+    with open(song_url, 'wb') as m:
+        m.write(music.content)
+
+
+def find_domain(url):
+    pattern = r"http[s]*://[a-z0-9]+\.([a-z0-9]+(-[a-z0-9]+)*\.+[a-z]{2,}\b)"
+    return find_one_string(pattern=pattern, content=url)
 
 
 def find_one_string(pattern, content, flags=0):
     if pattern is None or content is None:
         return None
-    patterns = re.compile(pattern=pattern, flags=flags)
     try:
+        patterns = re.compile(pattern=pattern, flags=flags)
         return patterns.search(content).group(1)
     except AttributeError:
         return None
@@ -54,3 +72,6 @@ class Util(object):
     def close(self):
         if self.webDriver is True:
             self.driver.close()
+
+if __name__ == "__main__":
+   download('test') 

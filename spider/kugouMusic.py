@@ -1,16 +1,18 @@
 import requests
-from Utils import Util, find_one_string
+from Utils.Utils import Util, find_one_string
 import json
 import re
 import os
-import time
 from lxml import etree
+from spider.baseSiteParser import BaseSiteParser
 
 
-class KuGouMusic(object):
+class KuGouMusic(BaseSiteParser):
+
     def __init__(self, webDriver=False):
         self.driver = Util(webDriver=webDriver)
         self.musicTopDict = {}
+        self.domain = 'kugou.com'
 
     def parser(self, url=None):
         self.parse_item(url=url)
@@ -69,12 +71,12 @@ class KuGouMusic(object):
                         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36"}
                     music = requests.get(music_reall_url, headers=headers)
                     # 文件名去除特殊符号
-                    file_path = "musicFile\\kugou\\{}".format(music_title)
+                    file_path = "musicFile/kugou/{}".format(music_title)
 
                     # 判断文件路径是否存在
                     if os.path.exists(file_path) is False:
                         os.makedirs(file_path)
-                    with open("{}\\{}".format(file_path, re.sub(r'[\s+|@<>:\\"/]', '', music_json_info["data"]["song_name"])),
+                    with open("{}/{}".format(file_path, re.sub(r'[\s+|@<>:\\"/]', '', music_json_info["data"]["song_name"])),
                               "wb") as m:
                         m.write(music.content)
                 break
@@ -82,10 +84,4 @@ class KuGouMusic(object):
                 print (e)
 
 
-
-
-
-
-
-if __name__ == "__main__":
-    KuGouMusic(webDriver=False).parser("https://www.kugou.com/yy/html/rank.html?from=homepage")
+# KuGouMusic().parser("https://www.kugou.com/yy/html/rank.html?from=homepage")

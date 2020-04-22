@@ -1,13 +1,16 @@
 import requests
-from Utils import Util
+from Utils.Utils import Util
 import json
 import re
 import time
+from spider.baseSiteParser import BaseSiteParser
 
 
-class QQMusic(object):
+class QQMusic(BaseSiteParser):
+
     def __init__(self, webDriver=False):
         self.driver = Util(webDriver=webDriver)
+        self.domain = 'qq.com'
 
     def parser(self, url=None):
         self.parse_item()
@@ -68,7 +71,7 @@ class QQMusic(object):
                 print (music_url)
                 # print(music.content)
                 # 文件名去除特殊符号
-                with open("musicFile\\{}.m4a".format(re.sub(r'[\s+|@<>:\\"/]', '', songs_dict[songmid])), "wb") as m:
+                with open("musicFile/{}.m4a".format(re.sub(r'[\s+|@<>:\\"/]', '', songs_dict[songmid])), "wb") as m:
                     m.write(music.content)
             except Exception as e:
                 print(e)
@@ -78,10 +81,3 @@ class QQMusic(object):
         time.sleep(1)
         print("程序开始爬取....")
 
-
-
-
-
-
-if __name__ == "__main__":
-    QQMusic().parser("https://y.qq.com")
