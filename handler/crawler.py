@@ -12,7 +12,9 @@ class crawler_handler(tornado.web.RequestHandler):
         url = self.get_argument('url')
         domain = find_domain(url=url)
         if url and find_domain(url=url):
-            spider = Scp.get_craw(domain=domain)
-            print(spider)
-            self.write(find_domain(url=url))
+            spider = Scp.get_craw(domain=domain)()
+            spider.parser(url)
+            data = spider.get_result()
+            self.set_header('Content-type', 'application/json')
+            self.write(data)
 

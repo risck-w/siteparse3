@@ -3,7 +3,7 @@ from Utils.Utils import Util
 import json
 import re
 import time
-from spider.baseSiteParser import BaseSiteParser
+from spider.baseSiteParser import BaseSiteParser, ScpParser
 
 
 class QQMusic(BaseSiteParser):
@@ -11,11 +11,18 @@ class QQMusic(BaseSiteParser):
     def __init__(self, webDriver=False):
         self.driver = Util(webDriver=webDriver)
         self.domain = 'qq.com'
+        self.ScpParser = ScpParser()
 
     def parser(self, url=None):
         self.parse_item()
 
     def parse_item(self, url=None):
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36"
+        }
+        self.ScpParser.set_headers(headers)
+
         # 榜单列表
         url = "https://c.y.qq.com/v8/fcg-bin/fcg_v8_toplist_opt.fcg?page=index&format=html&tpl=macv4&v8debug=1&jsonCallback=jsonCallback"
         music_list_content = self.driver.web_fetch2(url=url)
@@ -65,19 +72,12 @@ class QQMusic(BaseSiteParser):
                 if purl is None or sip is None:
                     continue
                 music_url = sip+purl
-                # 下载到本地
-                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36"}
-                music = requests.get(music_url, headers=headers)
-                print (music_url)
-                # print(music.content)
-                # 文件名去除特殊符号
-                with open("musicFile/{}.m4a".format(re.sub(r'[\s+|@<>:\\"/]', '', songs_dict[songmid])), "wb") as m:
-                    m.write(music.content)
+                self.ScpParser.set_vod_music(music_url)
+
             except Exception as e:
                 print(e)
-        print("程序睡眠三秒....")
-        time.sleep(2)
-        print("程序正在启动....")
-        time.sleep(1)
-        print("程序开始爬取....")
 
+            break
+
+    def get_result(self):
+        return self.ScpParser.get_params()
