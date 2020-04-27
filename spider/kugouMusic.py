@@ -1,5 +1,5 @@
 import requests
-from Utils.Utils import Util, find_one_string
+from Utils.Utils import WebSite, find_one_string
 import json
 import re
 import os
@@ -10,7 +10,7 @@ from spider.baseSiteParser import BaseSiteParser, ScpParser
 class KuGouMusic(BaseSiteParser):
 
     def __init__(self, webDriver=False):
-        self.driver = Util(webDriver=webDriver)
+        self.driver = WebSite(webDriver=webDriver)
         self.musicTopDict = {}
         self.domain = 'kugou.com'
         self.ScpParser = ScpParser()

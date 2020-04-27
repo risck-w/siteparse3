@@ -31,7 +31,7 @@ def find_one_string(pattern, content, flags=0):
         return None
 
 
-class Util(object):
+class WebSite(object):
     def __init__(self, webDriver=False):
         # 获取浏览器对象
         self.webDriver = webDriver
@@ -61,7 +61,8 @@ class Util(object):
                 req.add_header(key=key, headers=headers[key])
         return self.driver.urlopen(req).read().decode('utf-8')
 
-    def web_fetch2(self, url, headers={}):
+    @staticmethod
+    def web_fetch2(url, headers={}):
         # 采用常规request请求
         req = request.Request(url=url)
         if headers:

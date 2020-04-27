@@ -20,7 +20,11 @@ class BaseSiteParser(object):
 class ScpParser(object):
 
     def __init__(self):
-        self.params = {'vod': {'music': [], 'video': []}, 'live': {'video': []}, 'content': []}
+        self.params = {'code': 0,
+                       'author': 'risck-w',
+                       'vod': {'music': [], 'video': []},
+                       'live': {'video': []},
+                       'content': []}
 
     def set_vod_music(self, url=None):
         self.params['vod']['music'].append(url)

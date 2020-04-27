@@ -11,3 +11,6 @@ class crawler_handler(tornado.web.RequestHandler):
         data = Sp.parser(url=url)
         self.set_header('Content-type', 'application/json')
         self.write(data)
+
+
+
