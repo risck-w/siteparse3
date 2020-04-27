@@ -2,7 +2,7 @@
 # coding=utf8
 import json
 import settings
-from spider.baseSiteParser import BaseSiteParser
+from spider.baseSiteParser import BaseSiteParser, ScpParser
 from Utils.Utils import find_domain
 from db.redis import redis
 from Utils.logs import logger
@@ -52,17 +52,17 @@ class Sp(object):
             domain = find_domain(url=url)
             if domain is not None:
                 spider = Scp.get_craw(domain=domain)()
-                spider.parser()
+                spider.parser(url=url)
                 parser_result = spider.get_result()
-
+                parser_result['code'] = 0
                 redis.set(url,
                           json.dumps(parser_result),
                           ex=settings.redis_expire)
 
                 return parser_result
         except Exception as e:
-            logger.error('Init parsing script error {0}'.format(e))
+            logger.error('Init {0} parsing script error {1}'.format(domain, e))
 
-        logger.error('Cann`t find {0} script parsing engine'.format(domain))
-
-        return {}
+        result = ScpParser().get_params()
+        result['code'] = 1
+        return result

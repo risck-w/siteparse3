@@ -1,5 +1,5 @@
 import requests
-from Utils.Utils import Util
+from Utils.Utils import WebSite
 import json
 import re
 import time
@@ -9,7 +9,7 @@ from spider.baseSiteParser import BaseSiteParser, ScpParser
 class QQMusic(BaseSiteParser):
 
     def __init__(self, webDriver=False):
-        self.driver = Util(webDriver=webDriver)
+        self.driver = WebSite(webDriver=webDriver)
         self.domain = 'qq.com'
         self.ScpParser = ScpParser()
 
