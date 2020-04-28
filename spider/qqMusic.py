@@ -69,7 +69,7 @@ class QQMusic(BaseSiteParser):
                 req = json.loads(content)["req_0"]
                 purl = req["data"]["midurlinfo"][0]["purl"]
                 sip = req["data"]["sip"][0]
-                if purl is None or sip is None:
+                if purl is None or purl == '' or sip is None or sip == '':
                     continue
                 music_url = sip+purl
                 self.ScpParser.set_vod_music(music_url)
