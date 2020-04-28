@@ -7,7 +7,6 @@ from Utils.Utils import find_domain
 from db.redis import redis
 from Utils.logs import logger
 
-
 def singleton(cls):
     instance = cls()
     instance.__call__ = lambda: instance
