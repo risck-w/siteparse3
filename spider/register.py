@@ -2,7 +2,7 @@
 # coding=utf8
 import json
 import settings
-from spider.baseSiteParser import BaseSiteParser, ScpParser
+from spider.baseSiteParser import BaseSiteParser, ScpMusicParser
 from Utils.Utils import find_domain
 from db.redis import redis
 from Utils.logs import logger
@@ -49,10 +49,12 @@ class Sp(object):
                 logger.info('GET cache_data by redis: {0}'.format(url))
                 return json.loads(cache_data)
             domain = find_domain(url=url)
+            print(domain)
             if domain is not None:
                 spider = Scp.get_craw(domain=domain)()
                 spider.parser(url=url)
-                parser_result = spider.get_result()
+                parser_result = {}
+                parser_result['data'] = spider.get_result()
                 parser_result['code'] = 0
                 redis.set(url,
                           json.dumps(parser_result),
@@ -62,6 +64,6 @@ class Sp(object):
         except Exception as e:
             logger.error('Init {0} parsing script error {1}'.format(domain, e))
 
-        result = ScpParser().get_params()
+        result = ScpMusicParser().get_params()
         result['code'] = 1
         return result
