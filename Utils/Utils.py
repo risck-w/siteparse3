@@ -3,6 +3,7 @@ import os
 import requests
 from Utils import createDriver
 from urllib import request
+from urllib.parse import unquote
 
 
 def download(url, songName, headers={}):
@@ -16,9 +17,25 @@ def download(url, songName, headers={}):
         m.write(music.content)
 
 
+def format_url(data={}):
+    """
+
+    :param data: URL(Method: GET) params dict
+    :return: String
+    """
+    format_str = ''
+    if data:
+        for key in data.keys():
+            format_str = format_str + '&' + key + '=' + str(data[key])
+    return format_str
+
+
 def find_domain(url):
     pattern = r"http[s]*://[a-z0-9]+\.([a-z0-9]+(-[a-z0-9]+)*\.+[a-z]{2,}\b)"
-    return find_one_string(pattern=pattern, content=url)
+    domain = find_one_string(pattern=pattern, content=unquote(url))
+    if not domain:
+        return find_one_string(pattern=pattern, content=unquote(url))
+    return domain
 
 
 def find_one_string(pattern, content, flags=0):
@@ -62,12 +79,15 @@ class WebSite(object):
         return self.driver.urlopen(req).read().decode('utf-8')
 
     @staticmethod
-    def web_fetch2(url, headers={}):
+    def web_fetch2(url, headers={}, data=None, allow_redirect=True):
         # 采用常规request请求
-        req = request.Request(url=url)
+        req = request.Request(url=url, data=data)
         if headers:
             for key in headers:
                 req.add_header(key=key, val=headers[key])
+        if not allow_redirect:
+            return request.urlopen(req)
+
         return request.urlopen(req).read().decode('utf-8')
 
     def close(self):
