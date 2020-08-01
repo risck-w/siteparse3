@@ -1,10 +1,10 @@
 import requests
-from Utils.Utils import WebSite, find_one_string
+from Utils.Utils import WebSite, find_one_string, format_url
 import json
 import re
 import os
 from lxml import etree
-from spider.baseSiteParser import BaseSiteParser, ScpParser
+from spider.baseSiteParser import BaseSiteParser, ScpMusicParser
 
 
 class KuGouMusic(BaseSiteParser):
@@ -13,71 +13,68 @@ class KuGouMusic(BaseSiteParser):
         self.driver = WebSite(webDriver=webDriver)
         self.musicTopDict = {}
         self.domain = 'kugou.com'
-        self.ScpParser = ScpParser()
+        self.ScpMusicParser = ScpMusicParser()
 
     def parser(self, url=None):
         self.parse_item(url=url)
 
     def parse_item(self, url=None):
 
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36"
-        }
-        self.ScpParser.set_headers(headers)
+        """
 
-        # 榜单列表
-        url = "https://www.kugou.com/yy/html/rank.html?from=homepage"
-        content = self.driver.web_fetch2(url=url)
-        if content is None:
-            raise Exception("web_fetch Error")
-        root = etree.HTML(content)
-        music_tree = root.xpath("/html/body/div[3]/div/div[1]/div[1]/ul/li")
-        for item_tree in music_tree:
-            musci_list_tree = item_tree.xpath("a/@href")
-            musci_list_title = item_tree.xpath("a/@title")
+        :param url: https://www.kugou.com/song/#hash=58C27D1CE869A64E88296B5E34446B37&album_id=38162889
+        :param https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash=58C27D1CE869A64E88296B5E34446B37&album_id=38162889&mid=21ae69e0a12f2991d4f319ba3579434b&platid=4
+        :return:
+        x
+        """
 
-            if type(musci_list_title) is not list or musci_list_title is None:
-                musci_list_title[0] = "未知榜单"
+        if url is None:
+            return None
 
-            if type(musci_list_tree) is list and musci_list_tree:
-                if musci_list_title[0] in self.musicTopDict:
-                    self.musicTopDict[musci_list_title[0]].append(musci_list_tree)
-                    continue
-                self.musicTopDict[musci_list_title[0]] = musci_list_tree
-
-        self.parse_music_page()
-
-    def parse_music_page(self):
-        if self.musicTopDict is None:
-            return
-
-        for key in self.musicTopDict:
-            for link in self.musicTopDict[key]:
-                content = self.driver.web_fetch2(link)
-                if content is None:
-                    continue
-                # 获取每个榜单的音乐列表
-                music_info_dict = find_one_string(pattern="global.features = (\[.+?\]);", content=content)
-                self.parse_music_info(music_title=key, info=music_info_dict)
-                break
-            break
-
-    # 访问音乐播放页面，下载音乐
-    def parse_music_info(self, music_title, info):
-        info = json.loads(info)
-        for item in info:
-            music_page_url = "https://wwwapi.kugou.com/yy/index.php?r=play/getdata&callback=&hash={0}&mid={1}".format(item["Hash"], item["album_id"])
+        hash = find_one_string(pattern='hash=(.+?)&', content=url)
+        album_id = find_one_string(pattern='album_id=(\d+)', content=url)
+        if hash and album_id:
+            data_url = "https://wwwapi.kugou.com/yy/index.php?"
+            data = {
+                'r': 'play/getdata',
+                'hash': hash,
+                'album_id': album_id,
+                'mid': '21ae69e0a12f2991d4f319ba3579434b',
+                'platid': 4
+            }
+            data_url = data_url + format_url(data=data)
+            content = self.driver.web_fetch2(data_url)
             try:
-                content = self.driver.web_fetch2(music_page_url)
-                music_json_info = json.loads(content)
-                if music_json_info["err_code"] == 0 and music_json_info["data"]:
-                    music_reall_url = music_json_info["data"]["play_url"]
-                    self.ScpParser.set_vod_music(music_reall_url)
-                break
+                result = json.loads(content)
+                if result['status'] == 1 and result['data']:
+                    result_data = result['data']
+
+                    img = result_data['img']
+                    name = result_data['song_name']
+                    duration = result_data['timelength']
+                    bitrate = result_data['bitrate']
+                    play_url = result_data['play_url']
+                    size = result_data['filesize']
+
+                    if not play_url:
+                        return None
+
+                    self.ScpMusicParser.set_fluency('hd') \
+                        .set_name(name or '') \
+                        .set_img(img or '') \
+                        .set_duration(duration/1000 or 0) \
+                        .set_format('mp4') \
+                        .set_bitrate(bitrate or 0) \
+                        .set_url(play_url) \
+                        .set_size(size or 0)
+
             except Exception as e:
-                print (e)
+                return None
 
     def get_result(self):
-        return self.ScpParser.get_params()
+        return self.ScpMusicParser.get_params()
 
-# KuGouMusic().parser("https://www.kugou.com/yy/html/rank.html?from=homepage")
+
+# kugou = KuGouMusic()
+# kugou.parser("https://www.kugou.com/song/#hash=58C27D1CE869A64E88296B5E34446B37&album_id=38162889")
+# print (kugou.get_result())
