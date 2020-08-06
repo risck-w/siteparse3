@@ -1,19 +1,15 @@
-import requests
-from Utils.Utils import WebSite, find_one_string, format_url
 import json
-import re
-import os
-from lxml import etree
-from spider.baseSiteParser import BaseSiteParser, ScpMusicParser
+from Utils.Utils import WebSite, find_one_string, format_url
+from spider.baseSiteParser import BaseMusicParser, ScpParser
 
 
-class KuGouMusic(BaseSiteParser):
+class KuGouMusic(BaseMusicParser):
 
     def __init__(self, webDriver=False):
         self.driver = WebSite(webDriver=webDriver)
         self.musicTopDict = {}
         self.domain = 'kugou.com'
-        self.ScpMusicParser = ScpMusicParser()
+        self.ScpParser = ScpParser()
 
     def parser(self, url=None):
         self.parse_item(url=url)
@@ -59,11 +55,11 @@ class KuGouMusic(BaseSiteParser):
                     if not play_url:
                         return None
 
-                    self.ScpMusicParser.set_fluency('hd') \
+                    self.ScpParser.set_fluency('hd') \
                         .set_name(name or '') \
                         .set_img(img or '') \
                         .set_duration(duration/1000 or 0) \
-                        .set_format('mp4') \
+                        .set_format('mp3') \
                         .set_bitrate(bitrate or 0) \
                         .set_url(play_url) \
                         .set_size(size or 0)
@@ -72,7 +68,7 @@ class KuGouMusic(BaseSiteParser):
                 return None
 
     def get_result(self):
-        return self.ScpMusicParser.get_params()
+        return self.ScpParser.get_params()
 
 
 # kugou = KuGouMusic()
