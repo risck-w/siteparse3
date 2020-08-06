@@ -3,10 +3,10 @@ from Utils.Utils import WebSite
 import json
 import re
 import time
-from spider.baseSiteParser import BaseSiteParser, ScpParser
+from spider.baseSiteParser import BaseMusicParser, ScpParser
 
 
-class QQMusic(BaseSiteParser):
+class QQMusic(BaseMusicParser):
 
     def __init__(self, webDriver=False):
         self.driver = WebSite(webDriver=webDriver)

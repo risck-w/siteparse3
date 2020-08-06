@@ -6,6 +6,7 @@ from spider.register import Sp
 from tornado.concurrent import run_on_executor
 import tornado.gen
 from handler import executor
+from Utils.Utils import get_arguments
 
 
 class crawler_handler(tornado.web.RequestHandler):
@@ -14,12 +15,12 @@ class crawler_handler(tornado.web.RequestHandler):
 
     @tornado.gen.coroutine
     def get(self):
-        url = self.get_argument('url')
-        data = yield self.crawler_parser(url)
+        params = get_arguments(self)
+        data = yield self.crawler_parser(params)
         self.set_header('Content-type', 'application/json')
         self.write(data)
 
     @run_on_executor
-    def crawler_parser(self, url):
-        return Sp.parser(url)
+    def crawler_parser(self, params):
+        return Sp.parser(params)
 

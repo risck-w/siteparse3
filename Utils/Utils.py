@@ -17,6 +17,19 @@ def download(url, songName, headers={}):
         m.write(music.content)
 
 
+_ARG_DEFAULT = object()
+
+
+def get_arguments(self, default=_ARG_DEFAULT, strip=True):
+    params = {}
+    source = self.request.arguments
+    for name in source.keys():
+        value = self._get_argument(name, default, source, strip=strip)
+        params[name] = value
+
+    return params
+
+
 def format_url(data={}):
     """
 
@@ -79,16 +92,13 @@ class WebSite(object):
         return self.driver.urlopen(req).read().decode('utf-8')
 
     @staticmethod
-    def web_fetch2(url, headers={}, data=None, allow_redirect=True):
-        # 采用常规request请求
-        req = request.Request(url=url, data=data)
-        if headers:
-            for key in headers:
-                req.add_header(key=key, val=headers[key])
-        if not allow_redirect:
-            return request.urlopen(req)
-
-        return request.urlopen(req).read().decode('utf-8')
+    def web_fetch2(url, method='GET', headers=None, data=None, cookies=None, allow_redirects=True):
+        # 采用常规requests请求
+        if allow_redirects is False:
+            return requests.head(url, headers=headers, cookies=cookies, allow_redirects=allow_redirects)
+        if method == 'GET':
+            return requests.get(url, headers=headers, cookies=cookies, allow_redirects=allow_redirects).text
+        return requests.post(url, headers=headers, data=data, cookies=cookies, allow_redirects=allow_redirects).text
 
     def close(self):
         if self.webDriver is True:
