@@ -4,3 +4,4 @@ requests==2.23.0
 lxml==4.5.0
 redis==3.4.1
 mongoengine==0.20.0
+sqlalchemy==1.3.18
