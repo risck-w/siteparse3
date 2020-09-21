@@ -34,9 +34,14 @@ class crawler_handler(tornado.web.RequestHandler):
             try:
                 data = data['data']
                 fluency = data[list(data.keys())[0]]
-                parse_log = ParseLog(name=fluency['name'], pdt_type=params['parseType'])
+                name = fluency['name'][0:20]  # 防止有的视频歌曲名字太长，截取前20个字符
                 session = sessions()
-                session.add(parse_log)
+                parse_log = session.query(ParseLog).filter_by(name=name, pdt_type=params['parseType']).first()
+                if parse_log and parse_log.name:
+                    session.query(ParseLog).filter_by(name=name, pdt_type=params['parseType']).update({ParseLog.info_num:ParseLog.info_num +1})
+                else:
+                    parse_log = ParseLog(name=name, pdt_type=params['parseType'], info_num=1)
+                    session.add(parse_log)
                 session.commit()
             except Exception as e:
-                logger.error('Insert record info error: %s' % (params['url']))
+                logger.error('Insert record info error: %s: %s' % (params['url'], e))
