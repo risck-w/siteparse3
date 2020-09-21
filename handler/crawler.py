@@ -20,7 +20,7 @@ class crawler_handler(tornado.web.RequestHandler):
     def get(self):
         params = get_arguments(self)
         data = yield self.crawler_parser(params)
-        yield self.record_log(data=data, params=params)
+        self.record_log(data=data, params=params)
         self.set_header('Content-type', 'application/json')
         self.write(data)
 
