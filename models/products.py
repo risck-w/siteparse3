@@ -20,5 +20,33 @@ class ParseLog(BaseModel):
         self.pdt_type = pdt_type
         self.info_num = info_num
 
+    def to_json(self, keys=[]):
+        json_data = {}
+
+        if len(keys) != 0:
+            for key in keys:
+                json_data[key] = getattr(self, key)
+            return json_data
+        else:
+            return {
+                'id': self.id,
+                'name': self.name,
+                'author': self.author,
+                'pdt_type': self.pdt_type,
+                'info_num': self.info_num,
+                'updated_dt': self.updated_dt,
+                'created_dt': self.created_dt
+            }
+
+
+# class ParseRank(BaseModel):
+#
+#     __tablename__ = 'parse_rank'
+#
+#     id = Column(Integer, comment='自增id',primary_key=True, autoincrement=True)
+#     name = Column(String(20), comment='名称',nullable=True)
+#     author = Column(String(20), comment='作者', default='')
+
+
 
 BaseModel.metadata.create_all(engine)
