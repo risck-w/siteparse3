@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import settings
-from mongoengine import connect, Document, StringField
+from mongoengine import connect, Document, StringField, IntField
 # from mongoengine import *
 
 server = settings.mongo_server
@@ -20,3 +20,9 @@ class User(Document):
     password = StringField(max_length=16, min_length=8, required=True)
 
 
+class ParserRank(Document):
+    """解析排名数据"""
+    name = StringField(max_length=20, required=True, unique=True)
+    author = StringField(max_length=20, required=True)
+    pdt_type = StringField(max_length=5, required=True)
+    info_num = IntField(default=0)
