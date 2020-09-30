@@ -6,10 +6,18 @@ from db.mongo import ParserRank
 
 def sync_data():
     session = sessions()
-    params = ['name', 'author', 'pdt_type', 'info_num']
-    filter_data = session.query(ParseLog).order_by(desc(ParseLog.info_num)).limit(10).all()
-    filter_data = [x.to_json(params) for x in filter_data]
-    print (filter_data)
+    sql = """
+        select * 
+        from parse_log t1 
+        where exists (
+            select count(*)
+            from parse_log t2 
+            where t2.pdt_type = t1.pdt_type and  t1.info_num > t2.info_num HAVING count(*) < 10
+        ) order by t1.info_num desc
+        
+    """
+    filter_data = session.execute(sql)
+    filter_data = [dict(x.items()) for x in filter_data.fetchall()]
 
     ParserRank.drop_collection()
     for query in filter_data:
