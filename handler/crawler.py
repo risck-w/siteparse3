@@ -11,6 +11,7 @@ from db.mysql import sessions
 from models.products import ParseLog
 from db.mongo import ParserRank
 from Utils.logs import logger
+from Utils.Utils import has_field
 import json
 
 
@@ -60,16 +61,24 @@ class crawler_handler(tornado.web.RequestHandler):
     def record_log(self, data, params):
         if data['code'] == 0:
             try:
+                info_key = {}
                 data = data['data']
-                fluency = data[list(data.keys())[0]]
-                name = fluency['name'][0:20]  # 防止有的视频歌曲名字太长，截取前20个字符
                 session = sessions()
-                parse_log = session.query(ParseLog).filter_by(name=name, pdt_type=params['parseType']).first()
-                if parse_log and parse_log.name:
-                    session.query(ParseLog).filter_by(name=name, pdt_type=params['parseType']).update({ParseLog.info_num:ParseLog.info_num +1})
+                if params['parseType'] != 'news':
+                    fluency = data[list(data.keys())[0]]
+                    info_key[fluency['name'][0:50]] = fluency['img'] if has_field(fluency, 'img') else ''   # 防止有的视频歌曲名字太长，截取前20个字符
                 else:
-                    parse_log = ParseLog(name=name, pdt_type=params['parseType'], info_num=1)
-                    session.add(parse_log)
+                    for hot_new in data:
+                        info_key[hot_new['title'][0:50]] = hot_new['url']
+                for item in info_key.keys():
+
+                    parse_log = session.query(ParseLog).filter_by(name=item, pdt_type=params['parseType']).first()
+                    if parse_log and parse_log.name:
+                        session.query(ParseLog).filter_by(name=item, pdt_type=params['parseType']).update(
+                            {ParseLog.info_num: ParseLog.info_num + 1})
+                    else:
+                        parse_log = ParseLog(name=item, pdt_type=params['parseType'], info_num=1, url=info_key[item])
+                        session.add(parse_log)
                 session.commit()
             except Exception as e:
                 logger.error('Insert record info error: %s: %s' % (params['url'], e))
