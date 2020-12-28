@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from Utils.Utils import has_field
 
 
 class BaseMusicParser(object):
@@ -47,6 +48,86 @@ class BaseLiveParser(object):
     @abstractmethod
     def get_result(self):
         pass
+
+
+class BaseNewsParser(object):
+
+    __metaclass__ = ABCMeta
+
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def parser(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_result(self):
+        pass
+
+
+""" 静态新闻资源数据结构
+    :param news: list [{
+        title: String 题目，
+        description: String 描述，
+        images: String 图片地址，
+        url：String 详情页地址
+    }]
+
+"""
+
+
+class Begin(object):
+    def __init__(self, outer_instance):
+        self.single_new = {}
+        self.outer_instance = outer_instance
+
+    def set_title(self, title):
+        self.single_new['title'] = title
+        return self
+
+    def set_description(self, description):
+        self.single_new['description'] = description
+        return self
+
+    def set_images(self, images):
+        self.single_new['images'] = images
+        return self
+
+    def set_url(self, url):
+        self.single_new['url'] = url
+        return self
+
+    def End(self):
+        self.outer_instance.news.append(self.single_new)
+        return self.outer_instance
+
+
+class ScpNewsParser(object):
+    def __init__(self):
+        self.news = []
+
+    def Begin(self):
+        return Begin(self)
+
+    def get_field(self, field=None):
+        if not field:
+            raise Exception("KeyError: '" + field + "' must be set")
+        elif len(self.news) > 0:
+            items = []
+            for news_field in self.news:
+                if has_field(news_field, field):
+                    items.append(news_field[field])
+            return items
+        else:
+            raise Exception("KeyError: '" + field + "' must be set")
+
+    def get_params(self):
+        return self.news
+
+
+
+
 
 
 """爬虫数据结构

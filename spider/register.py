@@ -3,6 +3,7 @@
 import json
 import settings
 from spider.baseSiteParser import BaseMusicParser, BaseVodParser, BaseLiveParser, ScpParser
+from spider.baseSiteParser import BaseNewsParser
 from Utils.Utils import find_domain
 from db.redis import redis
 from Utils.logs import logger
@@ -20,6 +21,7 @@ class Scp(object):
         self.music = {}
         self.vod = {}
         self.live = {}
+        self.news = {}
         for cls in BaseMusicParser.__subclasses__():
             self.music[cls.__call__().domain] = cls
 
@@ -28,6 +30,9 @@ class Scp(object):
 
         for cls in BaseLiveParser.__subclasses__():
             self.live[cls.__call__().domain] = cls
+
+        for cls in BaseNewsParser.__subclasses__():
+            self.news[cls.__call__().domain] = cls
 
     def register(self, domain, crawler):
         self.music[domain] = crawler
@@ -39,6 +44,8 @@ class Scp(object):
             return self.vod
         elif scpType == 'live':
             return self.live
+        elif scpType == 'news':
+            return self.news
         else:
             raise Exception('unKnown scpType: %s' % (scpType))
 

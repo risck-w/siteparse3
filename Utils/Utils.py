@@ -17,6 +17,15 @@ def download(url, songName, headers={}):
         m.write(music.content)
 
 
+def has_field(params, field):
+    """验证字典中的字段是否存在"""
+
+    assert type(params) == dict
+
+    verify = lambda field: True if field in params.keys() else False
+    return verify(field)
+
+
 _ARG_DEFAULT = object()
 
 
