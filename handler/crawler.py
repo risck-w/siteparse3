@@ -8,11 +8,31 @@ from tornado.concurrent import run_on_executor
 from handler import executor
 from Utils.Utils import get_arguments
 from db.mysql import sessions
-from models.products import ParseLog
+from models.products import ParseLog, ReqUrlNameMapping
 from db.mongo import ParserRank
 from Utils.logs import logger
 from Utils.Utils import has_field
 import json
+
+
+class HotWebSite_Handler(tornado.web.RequestHandler):
+    executor = executor
+
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with,authorization,origin,content-type,accept")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
+        self.set_header('Content-Type', 'application/json; charset=UTF-8')
+
+    def options(self, *args, **kwargs):
+        self.set_status(204)
+        self.finish()
+
+    @tornado.gen.coroutine
+    def get(self, *args, **kwargs):
+        session = sessions()
+        hotWebSite = session.query(ReqUrlNameMapping).all()
+        self.write({'hotWebSite': [i.to_json() for i in hotWebSite]})
 
 
 class pageRank_handler(tornado.web.RequestHandler):
@@ -75,9 +95,9 @@ class crawler_handler(tornado.web.RequestHandler):
                     parse_log = session.query(ParseLog).filter_by(name=item, pdt_type=params['parseType']).first()
                     if parse_log and parse_log.name:
                         session.query(ParseLog).filter_by(name=item, pdt_type=params['parseType']).update(
-                            {ParseLog.info_num: ParseLog.info_num + 1})
+                            {ParseLog.info_num: ParseLog.info_num + 1, ParseLog.req_url: params['url']})
                     else:
-                        parse_log = ParseLog(name=item, pdt_type=params['parseType'], info_num=1, url=info_key[item])
+                        parse_log = ParseLog(name=item, pdt_type=params['parseType'], info_num=1, url=info_key[item], req_url=params['url'])
                         session.add(parse_log)
                 session.commit()
             except Exception as e:
