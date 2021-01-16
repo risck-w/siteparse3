@@ -87,11 +87,11 @@ class Begin(object):
         return self
 
     def set_description(self, description):
-        self.single_new['description'] = description
+        self.single_new['description'] = description or None
         return self
 
     def set_images(self, images):
-        self.single_new['images'] = images
+        self.single_new['images'] = images or None
         return self
 
     def set_url(self, url):
