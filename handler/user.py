@@ -3,8 +3,10 @@
 import tornado.web
 from tornado.gen import coroutine
 from tornado import concurrent
-from db.mongo import User
+from db.mysql import sessions
+from models.users import User
 import json
+import datetime
 
 
 class user_login_handler(tornado.web.RequestHandler):
@@ -20,14 +22,16 @@ class user_login_handler(tornado.web.RequestHandler):
         password = json.loads(self.request.body)['password']
 
         self.set_header("Content-type", 'application/json')
-        user = User.objects(username=username).first()
+
+        session = sessions()
+
+        user = session.query(User).filter_by(username=username).first()
         if user is None:
             self.write({'status': 2, 'message': '用户不存在', 'username': username})
             return None
 
-        user = json.loads(user.to_json())
-        if user['password'] == password:
-            self.write({'status': 0, 'message': '验证成功', 'username': username, '_id': user["_id"]['$oid']})
+        if user.password == password:
+            self.write({'status': 0, 'message': '验证成功', 'username': username, '_id': user.id})
         else:
             self.write({'status': 1, 'message': '用户名或密码不正确'})
 
@@ -36,7 +40,7 @@ class user_login_handler(tornado.web.RequestHandler):
         self.finish()
 
     def get(self, *args, **kwargs):
-        pass
+        self.write_error(404)
 
 
 class users_handler(tornado.web.RequestHandler):
@@ -54,42 +58,59 @@ class users_handler(tornado.web.RequestHandler):
     def post(self, *args, **kwargs):
         username = json.loads(self.request.body)['username']
         password = json.loads(self.request.body)['password']
+        telphone = json.loads(self.request.body)['telphone']
 
         self.set_header("Content-type", 'application/json')
-        user = User.objects(username=username).first()
+        # user = User.objects(username=username).first()
+        session = sessions()
+
+        user = session.query(User).filter_by(username=username).first()
         if user:
             self.write({'status': 3, 'message': '用户名已经被注册', 'username': username})
             return None
 
-        user = User(username=username, password=password).save()
+        user = User(
+            username=username,
+            password=password,
+            telphone=telphone,
+            sign_date=datetime.date.today()
+        )
 
-        user = json.loads(user.to_json())
-        self.write({'status': 0, 'message': '注册成功', 'username': username, '_id': user["_id"]['$oid']})
+        session.add(user)
+        session.commit()
+
+        self.write({'status': 0, 'message': '注册成功', 'username': username, '_id': user.id})
 
     def put(self, *args, **kwargs):  # 更新用户
 
         username = json.loads(self.request.body)['username']
         password = json.loads(self.request.body)['password']
-        user = User.objects(username=username).update(password=password)
+        telphone = json.loads(self.request.body)['telphone']
 
+        session = sessions()
+        res = session.query(User).filter(username=username).update({
+            User.password: password,
+            User.telphone: telphone,
+            User.modified_date: datetime.date.today()
+        })
+        session.commit()
         self.set_header("Content-type", 'application/json')
-        if user == 1:
-            new_user = User.objects(username=username)
-            self.write({'status': 0, 'message': '验证成功', 'username': username, '_id': new_user["_id"]['$oid']})
+        if res >= 1:
+            self.write({'status': 0, 'message': '验证成功', 'username': username})
         else:
             self.write({'status': 2, 'message': '信息更新失败'})
 
     def delete(self, *args, **kwargs):
         try:
+            session = sessions()
             username = json.loads(self.request.body)['username']
-            params = self.get_body_arguments()
-            users = User.objects(username=username).first()
-            if users:
+            users = session.query(User).filter(username=username).delete()
+            session.commit()
+            if not users:
                 self.write({'status': 2, 'message': '用户不存在', 'username': username})
-                return None
-            users.update()
+            self.write({'status': 0, 'message': '删除成功', 'username': username})
         except Exception as e:
-            pass
+            self.write({'status': 1, 'message': '删除用户错误', 'username': username})
 
     def get(self, *args, **kwargs):
         self.write_error(404)

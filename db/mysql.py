@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
 import settings
 
@@ -16,7 +16,7 @@ engine = create_engine(db_connect)
 
 BaseModel = declarative_base(engine)
 
-sessions = sessionmaker(bind=engine)
+sessions = scoped_session(sessionmaker(bind=engine))
 
 session = sessions()
 
