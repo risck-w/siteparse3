@@ -9,13 +9,15 @@ class ReqUrlNameMapping(BaseModel):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=True, index=True)
     url = Column(String(200), nullable=True)
+    pdt_type = Column(String(5))
     color = Column(String(20), default='#108ee9')
-    updated_dt = Column(DateTime, default=datetime.date.today())
-    created_dt = Column(DateTime, default=datetime.date.today())
+    updated_dt = Column(DateTime, default=datetime.datetime.now())
+    created_dt = Column(DateTime, default=datetime.datetime.now())
 
-    def __init__(self, name, url, color):
+    def __init__(self, name, url, pdt_type, color):
         self.name = name
         self.url = url
+        self.pdt_type = pdt_type
         self.color = color
 
     def to_json(self, keys=[]):
@@ -29,6 +31,7 @@ class ReqUrlNameMapping(BaseModel):
             return {
                 'name': self.name,
                 'url': self.url,
+                'pdt_type': self.pdt_type,
                 'color': self.color,
                 'updated_dt': str(self.updated_dt),
                 'created_dt': str(self.created_dt)
@@ -45,8 +48,8 @@ class ParseLog(BaseModel):
     info_num = Column(Integer, default=0, index=True)
     req_url = Column(String(200), nullable=True, index=True)
     url = Column(String(200), default='')
-    updated_dt = Column(DateTime, default=datetime.date.today())
-    created_dt = Column(DateTime, default=datetime.date.today())
+    updated_dt = Column(DateTime, default=datetime.datetime.now())
+    created_dt = Column(DateTime, default=datetime.datetime.now())
 
     def __init__(self, name, req_url, author='', pdt_type='', info_num=0, url=''):
         self.name = name

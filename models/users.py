@@ -12,7 +12,7 @@ class User(BaseModel):
     password = Column(String(16), nullable=False, comment='密码')
     username = Column(String(16), nullable=False, unique=True, comment='用户名')
     telphone = Column(String(11), nullable=True, comment='手机号')
-    login_date = Column(DateTime, default=datetime.date.today(), comment='最近登录时间')
+    login_date = Column(DateTime, default=datetime.datetime.now(), comment='最近登录时间')
     sign_date = Column(DateTime, comment='注册时间')
     logout_date = Column(DateTime, comment='最近退出时间')
     modified_date = Column(DateTime, comment='最近修改时间')

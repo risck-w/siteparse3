@@ -68,8 +68,11 @@ class crawler_handler(tornado.web.RequestHandler):
     def get(self):
         params = get_arguments(self)
         data = yield self.crawler_parser(params)
-        self.record_log(data=data, params=params)
+        yield self.record_log(data=data, params=params)
         self.set_header('Content-type', 'application/json')
+        if params['search'] and params['search'] == '1':
+            self.write({'status': 1, 'message': 'ok'})
+            return None
         self.write(data)
 
     @run_on_executor
