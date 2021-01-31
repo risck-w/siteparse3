@@ -11,6 +11,7 @@ redis_db = 10
 
 # redis expire date
 redis_expire = 3
+redis_timeout = 5000
 
 
 """

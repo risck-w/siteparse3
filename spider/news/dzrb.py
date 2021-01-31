@@ -2,6 +2,7 @@ from ..baseSiteParser import BaseNewsParser, ScpNewsParser
 from Utils.Utils import WebSite
 from bs4 import BeautifulSoup
 
+# 大众日报
 
 class DZRBParser(BaseNewsParser):
 
@@ -10,7 +11,6 @@ class DZRBParser(BaseNewsParser):
         self.ScpNewsParser = ScpNewsParser()
 
     def parser(self, url):
-        print(url)
         if not url:
             return None
 

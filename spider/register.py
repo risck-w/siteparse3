@@ -69,6 +69,7 @@ class Sp(object):
 
     @staticmethod
     def parser(params={}):
+        domain = None
         try:
             url = params.get('url')
             parse_type = params.get('parseType')
@@ -96,3 +97,17 @@ class Sp(object):
         result = ScpParser().get_params()
         result['code'] = 1
         return result
+
+    @staticmethod
+    def isCheck(params={}):
+        result = {'code': 0}
+        try:
+            url = params.get('url')
+            parse_type = params.get('parseType')
+            domain = find_domain(url=url)
+            if domain is None or Scp.get_craw(domain=domain, scpType=parse_type) is None:
+                result['code'] = 1
+            return result
+        except Exception as e:
+            result['code'] = 1
+            return result

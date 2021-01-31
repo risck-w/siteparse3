@@ -11,7 +11,9 @@ from db.mysql import sessions
 from models.products import ParseLog, ReqUrlNameMapping
 from Utils.logs import logger
 from Utils.Utils import has_field
+from db.redis import CreateQueue
 import json
+import time
 
 
 class HotWebSite_Handler(tornado.web.RequestHandler):
@@ -67,12 +69,21 @@ class crawler_handler(tornado.web.RequestHandler):
     @tornado.gen.coroutine
     def get(self):
         params = get_arguments(self)
-        data = yield self.crawler_parser(params)
-        yield self.record_log(data=data, params=params)
         self.set_header('Content-type', 'application/json')
         if 'search' in params and params['search'] == '1':
-            self.write({'status': 1, 'message': 'ok'})
-            return None
+            data = Sp.isCheck(params=params)
+            try:
+                if data['code'] == 0:
+                    crawler_queue = CreateQueue('crawlerQueue')
+                    crawler_queue.lpush(json.dumps(params))
+                    self.write({'status': 0, 'message': 'ok'})
+                else:
+                    self.write({'status': 1, 'message': '暂不支持解析'})
+                return None
+            except Exception as e:
+                logger.error(e)
+        data = yield self.crawler_parser(params)
+        self.record_log(data=data, params=params)
         self.write(data)
 
     @run_on_executor
