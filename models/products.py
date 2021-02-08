@@ -3,6 +3,64 @@ from db.mysql import BaseModel, engine
 from sqlalchemy import Column, Integer, String, DateTime
 
 
+class HotWords(BaseModel):
+    """
+    热点词汇表
+    """
+
+    __tablename__ = 'hot_words'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    word = Column(String(100), nullable=False)
+    num = Column(Integer, default=0)
+    update_dt = Column(DateTime, default=datetime.datetime.now())
+
+    def __init__(self, word):
+        self.word = word
+
+    def to_json(self, keys=[]):
+        json_data = {}
+
+        if len(keys) != 0:
+            for key in keys:
+                json_data[key] = getattr(self, key)
+            return json_data
+        else:
+            return {
+                'word': self.word,
+                'updated_dt': str(self.updated_dt)
+            }
+
+
+
+class NewsWords(BaseModel):
+    """
+    分词存储表
+    """
+
+    __tablename__ = 'news_words'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False)
+    update_dt = Column(DateTime, default=datetime.datetime.now())
+
+    def __init__(self, name):
+        self.name = name
+
+    def to_json(self, keys=[]):
+        json_data = {}
+
+        if len(keys) != 0:
+            for key in keys:
+                json_data[key] = getattr(self, key)
+            return json_data
+        else:
+            return {
+                'name': self.name,
+                'updated_dt': str(self.updated_dt)
+            }
+
+
 class ReqUrlNameMapping(BaseModel):
     __tablename__ = 'req_url_name_mapping'
 
@@ -47,7 +105,7 @@ class ParseLog(BaseModel):
     pdt_type = Column(String(5))
     info_num = Column(Integer, default=0, index=True)
     req_url = Column(String(200), nullable=True, index=True)
-    url = Column(String(200), default='')
+    url = Column(String(500), default='')
     updated_dt = Column(DateTime, default=datetime.datetime.now())
     created_dt = Column(DateTime, default=datetime.datetime.now())
 

@@ -8,3 +8,4 @@ pymysql==0.10.0
 APScheduler==3.6.3
 gevent==20.6.2
 beautifulsoup4==4.4.0
+jieba==0.42.1
