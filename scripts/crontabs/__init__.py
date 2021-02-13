@@ -6,6 +6,7 @@ from scripts.crontabs.countHotWords import sync_data as hot_words
 from settings import CRONTAB_TIME
 
 jobs = [sync_data, hot_words]
+times = [CRONTAB_TIME, CRONTAB_TIME-1]
 
 
 def init():
@@ -23,8 +24,11 @@ def start(scheduler=None):
 logger.info('Start initing gevent scheduler')
 
 scheduler = init()
+
+time_index = 0
 for job in jobs:
-    scheduler.add_job(job, 'interval', minutes=CRONTAB_TIME)
+    scheduler.add_job(job, 'interval', minutes=times[time_index])
+    time_index = int(time_index) + 1
 g = start(scheduler)
 g.join()
 
