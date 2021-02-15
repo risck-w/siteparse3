@@ -12,9 +12,46 @@ from models.products import ParseLog, ReqUrlNameMapping, HotWords
 from Utils.logs import logger
 from Utils.Utils import has_field
 from db.redis import CreateQueue
+from sqlalchemy.sql import func
 import json
 import math
 import time
+
+
+class Top_HotWebSite_Handler(tornado.web.RequestHandler):
+    executor = executor
+
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with,authorization,origin,content-type,accept")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
+        self.set_header('Content-Type', 'application/json; charset=UTF-8')
+
+    def options(self, *args, **kwargs):
+        self.set_status(204)
+        self.finish()
+
+    @tornado.gen.coroutine
+    def get(self, *args, **kwargs):
+        session = sessions()
+        sql = '''
+            select d.name, c.count, d.color from (
+                select count(b.info_num) count , b.req_url from (
+                 select * from parse_log a where a.pdt_type = 'news'
+                ) b
+                group by b.req_url
+            ) c
+            left join req_url_name_mapping d
+            on c.req_url = d.url
+        '''
+        orig_data = session.execute(sql)
+        sumHotWebSite = [dict(x.items()) for x in orig_data.fetchall()]
+        sumHotWebSite.sort(key=lambda x:x['count'], reverse=True)
+        if len(sumHotWebSite) > 8:
+            sumHotWebSite = sumHotWebSite[:8]
+        session.close()
+
+        self.write({'topHotWebSite': sumHotWebSite})
 
 
 class WordCloud_Handler(tornado.web.RequestHandler):
