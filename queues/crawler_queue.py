@@ -3,13 +3,16 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
 
 import json
-from Utils.logs import logger
+import logging
 from Utils.Utils import has_field
 from spider.register import Sp
 from models.products import ParseLog
 from db.mysql import sessions
 from db.redis import redis, CreateQueue
+from scripts.crontabs.wordSplitToMysql import sync_data
 
+
+logger = logging.getLogger(__name__)
 
 crawler_queue = CreateQueue('crawlerQueue')
 
@@ -42,6 +45,8 @@ def record_log(data, params):
                                          req_url=params['url'])
                     session.add(parse_log)
             session.commit()
+            sessions.close()
+
         except Exception as e:
             logger.error('Insert record info error: %s: %s' % (params['url'], e))
 
@@ -53,6 +58,7 @@ while True:
         data = crawler_parser(task)
         record_log(data, task)
         logger.info(task['url']+' Handle successful')
+        sync_data()
     except Exception as e:
         logger.error('Error: '+task+' Handle failed: '+e)
 

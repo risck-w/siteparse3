@@ -42,3 +42,18 @@ class CreateQueue(object):
     def brpop(self):
         return redis.brpop(self.queue_name)
 
+    # 去重队列， set集合, 向集合里面添加数据
+    def sadd(self, *value):
+        for val in value:
+            redis.sadd(self.queue_name, val)
+
+    # 判断数据是否在集合中
+    def sismember(self, member=None):
+        if member is None:
+            return False
+
+        return redis.sismember(self.queue_name, member)
+
+    # 移除集合中的指定数据
+    def srem(self, *member):
+        redis.srem(self.queue_name, *member)

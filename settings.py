@@ -4,7 +4,7 @@ debug = False
 """
     定时任务时间间隔(主要用于分词队列)，时间单位：分钟
 """
-CRONTAB_TIME = 5
+CRONTAB_TIME = 600
 
 
 """

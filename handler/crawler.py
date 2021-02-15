@@ -8,12 +8,46 @@ from tornado.concurrent import run_on_executor
 from handler import executor
 from Utils.Utils import get_arguments
 from db.mysql import sessions
-from models.products import ParseLog, ReqUrlNameMapping
+from models.products import ParseLog, ReqUrlNameMapping, HotWords
 from Utils.logs import logger
 from Utils.Utils import has_field
 from db.redis import CreateQueue
 import json
+import math
 import time
+
+
+class WordCloud_Handler(tornado.web.RequestHandler):
+    executor = executor
+
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with,authorization,origin,content-type,accept")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
+        self.set_header('Content-Type', 'application/json; charset=UTF-8')
+
+    def options(self, *args, **kwargs):
+        self.set_status(204)
+        self.finish()
+
+    @tornado.gen.coroutine
+    def get(self, *args, **kwargs):
+        session = sessions()
+        word_cloud = session.query(HotWords).all()
+        # data = [i.to_json() for i in word_cloud]
+        session.close()
+        trans_data = []
+        for i in word_cloud:
+            temp = {}
+            temp['name'] = i.word
+            temp['value'] = i.num
+            temp['updated_dt'] = str(i.update_dt)
+            trans_data.append(temp)
+        trans_data.sort(key=lambda item: item['value'], reverse=True)
+        rindex = len(trans_data)
+        if rindex >= 100:
+            rindex = int(math.ceil(len(trans_data)/10))
+        self.write({'wordCloud': trans_data[:rindex]})
 
 
 class HotWebSite_Handler(tornado.web.RequestHandler):
@@ -33,6 +67,7 @@ class HotWebSite_Handler(tornado.web.RequestHandler):
     def get(self, *args, **kwargs):
         session = sessions()
         hotWebSite = session.query(ReqUrlNameMapping).all()
+        session.close()
         self.write({'hotWebSite': [i.to_json() for i in hotWebSite]})
 
 
@@ -113,5 +148,6 @@ class crawler_handler(tornado.web.RequestHandler):
                         parse_log = ParseLog(name=item, pdt_type=params['parseType'], info_num=1, url=info_key[item], req_url=params['url'])
                         session.add(parse_log)
                 session.commit()
+                session.close()
             except Exception as e:
                 logger.error('Insert record info error: %s: %s' % (params['url'], e))

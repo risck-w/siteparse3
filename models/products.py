@@ -28,7 +28,8 @@ class HotWords(BaseModel):
         else:
             return {
                 'word': self.word,
-                'updated_dt': str(self.updated_dt)
+                'num': self.num,
+                'updated_dt': str(self.update_dt)
             }
 
 

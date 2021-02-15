@@ -1,9 +1,14 @@
 import re
 import os
 import requests
+import time
 from Utils import createDriver
 from urllib import request
 from urllib.parse import unquote
+
+
+def getCurrentTime():
+    return time.strftime('%Y-%m-%d %H:%M:%S ',time.localtime(time.time()))
 
 
 def download(url, songName, headers={}):
