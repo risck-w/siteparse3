@@ -141,6 +141,7 @@ class crawler_handler(tornado.web.RequestHandler):
             session = sessions()
             result = session.execute(sql)
             data = [dict(x.items()) for x in result.fetchall()]
+            data.sort(key=lambda x:x['updated_dt'], reverse=True)
             session.close()
             self.write({'code': 0, 'data': data})
         except Exception as e:
