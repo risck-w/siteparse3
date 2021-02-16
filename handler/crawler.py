@@ -108,32 +108,6 @@ class HotWebSite_Handler(tornado.web.RequestHandler):
         self.write({'hotWebSite': [i.to_json() for i in hotWebSite]})
 
 
-# class pageRank_handler(tornado.web.RequestHandler):
-#
-#     executor = executor
-#
-#     def set_default_headers(self):
-#         self.set_header('Access-Control-Allow-Origin', '*')
-#         self.set_header("Access-Control-Allow-Headers", "x-requested-with,authorization,origin,content-type,accept")
-#         self.set_header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
-#         self.set_header('Content-Type', 'application/json; charset=UTF-8')
-#
-#     def options(self, *args, **kwargs):
-#         self.set_status(204)
-#         self.finish()
-#
-#     @tornado.gen.coroutine
-#     def get(self, *args, **kwargs):
-#         rank = yield self.get_parser_rank()
-#         self.write(rank)
-#
-#     @run_on_executor
-#     def get_parser_rank(self):
-#         data = ParserRank.objects.order_by('-info_num').all().to_json()
-#         pdt_type = set([x['pdt_type'] for x in json.loads(data)])
-#         return {'type_num': len(pdt_type), 'pdt_type': list(pdt_type), 'data': json.loads(data)}
-
-
 class crawler_handler(tornado.web.RequestHandler):
 
     executor = executor
