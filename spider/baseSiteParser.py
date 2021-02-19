@@ -94,6 +94,10 @@ class Begin(object):
         self.single_new['images'] = images or None
         return self
 
+    def set_orig_createtime(self, time):
+        self.single_new['orig_createtime'] = time or None
+        return self
+
     def set_url(self, url):
         self.single_new['url'] = url
         return self

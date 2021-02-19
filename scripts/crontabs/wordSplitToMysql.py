@@ -11,7 +11,7 @@ import json
 wordSplit_queue = CreateQueue('wordSplit_queue')
 
 sql = """
-    select name, url from parse_log where updated_dt >= date_sub(NOW(), interval {0} minute); 
+    select name, url from parse_log where created_dt >= date_sub(NOW(), interval {0} minute); 
 """.format(3)
 
 

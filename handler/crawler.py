@@ -131,8 +131,8 @@ class crawler_handler(tornado.web.RequestHandler):
 
         # 搜索词云中的关键词新闻
         sql = '''
-            select a.name title,b.name res_name, a.url, a.req_url, date_format(a.updated_dt, '%Y-%m-%d %h:%i:%s') as updated_dt from (
-                select name, req_url, url, updated_dt from parse_log where pdt_type = 'news' and name like "%{0}%"
+            select a.name title,b.name res_name, a.url, a.req_url, orig_createtime as updated_dt, date_format(a.udt, '%Y-%m-%d %h:%i:%s') as udt from (
+                select name, req_url, url, orig_createtime, updated_dt as udt from parse_log where pdt_type = 'news' and name like "%{0}%"
             ) a
             left join req_url_name_mapping b
             on a.req_url = b.url
@@ -141,10 +141,11 @@ class crawler_handler(tornado.web.RequestHandler):
             session = sessions()
             result = session.execute(sql)
             data = [dict(x.items()) for x in result.fetchall()]
-            data.sort(key=lambda x:x['updated_dt'], reverse=True)
+            data.sort(key=lambda x:x['udt'], reverse=True)
             session.close()
             self.write({'code': 0, 'data': data})
         except Exception as e:
+            logger.error(e)
             self.write({'code': 1, 'data': None, 'message': 'search error!'})
 
     @run_on_executor

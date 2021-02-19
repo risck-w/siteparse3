@@ -107,16 +107,18 @@ class ParseLog(BaseModel):
     info_num = Column(Integer, default=0, index=True)
     req_url = Column(String(200), nullable=True, index=True)
     url = Column(String(500), default='')
+    orig_createtime = Column(String(40), default='', nullable=True)
     updated_dt = Column(DateTime, default=datetime.datetime.now())
     created_dt = Column(DateTime, default=datetime.datetime.now())
 
-    def __init__(self, name, req_url, author='', pdt_type='', info_num=0, url=''):
+    def __init__(self, name, req_url, author='', pdt_type='', info_num=0, url='', orig_createtime=''):
         self.name = name
         self.author = author
         self.pdt_type = pdt_type
         self.info_num = info_num
         self.req_url = req_url
         self.url = url
+        self.orig_createtime = orig_createtime
 
     def to_json(self, keys=[]):
         json_data = {}
@@ -134,6 +136,7 @@ class ParseLog(BaseModel):
                 'info_num': self.info_num,
                 'req_url': self.req_url,
                 'url': self.url,
+                'orig_createtime': self.orig_createtime,
                 'updated_dt': self.updated_dt,
                 'created_dt': self.created_dt
             }

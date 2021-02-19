@@ -1,5 +1,5 @@
 from ..baseSiteParser import BaseNewsParser, ScpNewsParser
-from Utils.Utils import WebSite, find_one_string
+from Utils.Utils import WebSite, find_one_string, has_field
 from bs4 import BeautifulSoup
 import json
 
@@ -49,6 +49,13 @@ class XinhuanetParser(BaseNewsParser):
 
                 if images_url:
                     seq.set_images(images_url)
+
+                if has_field(_news_info, 'imageList'):
+                    try:
+                        createTime = _news_info['imageList'][0]['createTime']
+                        seq.set_orig_createtime(createTime)
+                    except Exception as e:
+                        pass
 
                 seq.End()
 

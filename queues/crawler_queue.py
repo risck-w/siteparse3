@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
 
 import json
 import logging
-from Utils.Utils import has_field
+from Utils.Utils import has_field, getCurrentTime
 from spider.register import Sp
 from models.products import ParseLog
 from db.mysql import sessions
@@ -25,6 +25,7 @@ def record_log(data, params):
     if data['code'] == 0:
         try:
             info_key = {}
+            createTime_key = {}
             data = data['data']
             session = sessions()
             if params['parseType'] != 'news':
@@ -34,15 +35,19 @@ def record_log(data, params):
             else:
                 for hot_new in data:
                     info_key[hot_new['title'][0:50]] = hot_new['url']
+                    if has_field(hot_new, 'orig_createtime'):
+                        createTime_key[hot_new['title'][0:50]] = hot_new['orig_createtime']
+                    else:
+                        createTime_key[hot_new['title'][0:50]] = str(getCurrentTime())
             for item in info_key.keys():
 
                 parse_log = session.query(ParseLog).filter_by(name=item, pdt_type=params['parseType']).first()
                 if parse_log and parse_log.name:
                     session.query(ParseLog).filter_by(name=item, pdt_type=params['parseType']).update(
-                        {ParseLog.info_num: ParseLog.info_num + 1, ParseLog.req_url: params['url']})
+                        {ParseLog.info_num: ParseLog.info_num + 1, ParseLog.req_url: params['url'], ParseLog.orig_createtime:createTime_key[item], ParseLog.updated_dt: getCurrentTime()})
                 else:
                     parse_log = ParseLog(name=item, pdt_type=params['parseType'], info_num=1, url=info_key[item],
-                                         req_url=params['url'])
+                                         req_url=params['url'], orig_createtime=createTime_key[item])
                     session.add(parse_log)
             session.commit()
             sessions.close()
