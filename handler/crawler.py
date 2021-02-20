@@ -137,6 +137,17 @@ class crawler_handler(tornado.web.RequestHandler):
             left join req_url_name_mapping b
             on a.req_url = b.url
         '''.format(params['url'])
+
+        if has_field(params, 'parseType') and params['parseType'] == 'website':
+            sql = '''
+                select a.name title,b.name res_name, a.url, a.req_url, orig_createtime as updated_dt, date_format(a.udt, '%Y-%m-%d %H:%i:%s') as udt from (
+                    select name, req_url, url, orig_createtime, created_dt as udt from parse_log where pdt_type = 'news'
+                ) a
+                left join req_url_name_mapping b
+                on a.req_url = b.url
+                where  b.name like "%{0}%"
+            '''.format(params['url'])
+
         try:
             session = sessions()
             result = session.execute(sql)
