@@ -131,7 +131,7 @@ class crawler_handler(tornado.web.RequestHandler):
 
         # 搜索词云中的关键词新闻
         sql = '''
-            select a.name title,b.name res_name, a.url, a.req_url, orig_createtime as updated_dt, date_format(a.udt, '%Y-%m-%d %h:%i:%s') as udt from (
+            select a.name title,b.name res_name, a.url, a.req_url, orig_createtime as updated_dt, date_format(a.udt, '%Y-%m-%d %H:%i:%s') as udt from (
                 select name, req_url, url, orig_createtime, updated_dt as udt from parse_log where pdt_type = 'news' and name like "%{0}%"
             ) a
             left join req_url_name_mapping b
