@@ -2,13 +2,30 @@ import re
 import os
 import requests
 import time
+import math
 from Utils import createDriver
 from urllib import request
 from urllib.parse import unquote
 
 
-def getCurrentTime():
-    return time.strftime('%Y-%m-%d %H:%M:%S ',time.localtime(time.time()))
+def get_number_length(number):
+
+    assert type(number) == int
+
+    return int(math.log10(number)) + 1
+
+
+def getCurrentTime(seconds=None):
+    """
+    :param seconds: Number
+    :return: format time
+    """
+    if seconds:
+        if get_number_length(int(seconds)) > 10:
+            seconds = int(str(seconds[:10]))
+    else:
+        seconds = time.time()
+    return time.strftime('%Y-%m-%d %H:%M:%S ',time.localtime(seconds))
 
 
 def download(url, songName, headers={}):
@@ -51,9 +68,11 @@ def format_url(data={}):
     :return: String
     """
     format_str = ''
+    param = []
     if data:
-        for key in data.keys():
-            format_str = format_str + '&' + key + '=' + str(data[key])
+        for k, v in data.items():
+            param.append('{0}={1}'.format(k, str(v)))
+        format_str = '&'.join(param)
     return format_str
 
 
