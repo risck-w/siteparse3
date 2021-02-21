@@ -58,7 +58,7 @@ def format_url(data={}):
 
 
 def find_domain(url):
-    pattern = r"http[s]*://[a-z0-9]+\.([a-z0-9]+(-[a-z0-9]+)*\.+[a-z]{2,}\b)"
+    pattern = r"http[s]*://[a-z0-9]+\.([a-z0-9]+(-[a-z0-9]+)*\.+[a-z]{2,}\.*([a-z]{2,})*)\b"
     domain = find_one_string(pattern=pattern, content=unquote(url))
     if not domain:
         return find_one_string(pattern=pattern, content=unquote(url))
@@ -106,13 +106,17 @@ class WebSite(object):
         return self.driver.urlopen(req).read().decode('utf-8')
 
     @staticmethod
-    def web_fetch2(url, method='GET', headers=None, data=None, cookies=None, allow_redirects=True):
+    def web_fetch2(url, method='GET', headers=None, data=None, cookies=None, allow_redirects=True, decode=None):
         # 采用常规requests请求
         if allow_redirects is False:
             return requests.head(url, headers=headers, cookies=cookies, allow_redirects=allow_redirects)
         if method == 'GET':
-            return requests.get(url, headers=headers, cookies=cookies, allow_redirects=allow_redirects).text
-        return requests.post(url, headers=headers, data=data, cookies=cookies, allow_redirects=allow_redirects).text
+            res = requests.get(url, headers=headers, cookies=cookies, allow_redirects=allow_redirects)
+        else:
+            res = requests.post(url, headers=headers, data=data, cookies=cookies, allow_redirects=allow_redirects)
+        if decode:
+            return res.content.decode(decode)
+        return res.text
 
     def close(self):
         if self.webDriver is True:
