@@ -55,7 +55,7 @@ class HuanQiuParser(BaseNewsParser):
                     continue
 
                 seg = self.Scp.Begin()
-                logger.info('----'+title)
+
                 seg.set_title(title)
                 seg.set_url(url)
 
