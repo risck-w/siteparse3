@@ -7,7 +7,7 @@ from Utils.logs import logger
 
 from apscheduler.schedulers.gevent import GeventScheduler
 from gevent import monkey; monkey.patch_all()
-from settings import CRONTAB_TIME
+from settings import CRONTAB_TIME, COUNT_HOTWORD_DAYS
 
 
 
@@ -18,7 +18,7 @@ def getCurrentTime():
 
 def sync_data():
     session = mkSessions()
-    time_again = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d %H:%M')
+    time_again = (datetime.datetime.now() - datetime.timedelta(days=COUNT_HOTWORD_DAYS)).strftime('%Y-%m-%d %H:%M')
     newsSplitwords = session.query(NewsWords).filter(NewsWords.update_dt > time_again).all()
     news_words_list = [x.name for x in newsSplitwords]
     news_words_split = [x.split(',') for x in news_words_list]
