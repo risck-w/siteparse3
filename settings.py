@@ -6,6 +6,11 @@ debug = False
 """
 CRONTAB_TIME = 600
 
+"""
+    热点词统计频率:天
+"""
+COUNT_HOTWORD_DAYS = 2
+
 
 """
     Redis config

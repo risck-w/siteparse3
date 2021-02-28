@@ -111,7 +111,7 @@ class ParseLog(BaseModel):
     updated_dt = Column(DateTime, default=datetime.datetime.now())
     created_dt = Column(DateTime, default=datetime.datetime.now())
 
-    def __init__(self, name, req_url, author='', pdt_type='', info_num=0, url='', orig_createtime=''):
+    def __init__(self, name, req_url, author='', pdt_type='', info_num=0, url='', orig_createtime='', updated_dt=None, created_dt=None):
         self.name = name
         self.author = author
         self.pdt_type = pdt_type
@@ -119,6 +119,8 @@ class ParseLog(BaseModel):
         self.req_url = req_url
         self.url = url
         self.orig_createtime = orig_createtime
+        self.updated_dt = updated_dt
+        self.created_dt = created_dt
 
     def to_json(self, keys=[]):
         json_data = {}

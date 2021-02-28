@@ -25,7 +25,7 @@ def getCurrentTime(seconds=None):
             seconds = int(str(seconds[:10]))
     else:
         seconds = time.time()
-    return time.strftime('%Y-%m-%d %H:%M:%S ',time.localtime(seconds))
+    return time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(seconds))
 
 
 def download(url, songName, headers={}):
