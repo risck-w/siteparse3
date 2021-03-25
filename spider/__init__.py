@@ -1,9 +1,9 @@
 import pkgutil
 import sys
-from spider import music, vod, live
+from spider import music, vod, live, news
 
 __modules = [
-    music, vod, live
+    music, vod, live, news
 ]
 
 

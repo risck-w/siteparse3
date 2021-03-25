@@ -1,5 +1,17 @@
 debug = False
 
+
+"""
+    定时任务时间间隔(主要用于分词队列)，时间单位：分钟
+"""
+CRONTAB_TIME = 600
+
+"""
+    热点词统计频率:天
+"""
+COUNT_HOTWORD_DAYS = 2
+
+
 """
     Redis config
 """
@@ -11,6 +23,7 @@ redis_db = 10
 
 # redis expire date
 redis_expire = 3
+redis_timeout = 5000
 
 
 """

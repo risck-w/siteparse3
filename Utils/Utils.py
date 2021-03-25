@@ -1,9 +1,31 @@
 import re
 import os
 import requests
+import time
+import math
 from Utils import createDriver
 from urllib import request
 from urllib.parse import unquote
+
+
+def get_number_length(number):
+
+    assert type(number) == int
+
+    return int(math.log10(number)) + 1
+
+
+def getCurrentTime(seconds=None):
+    """
+    :param seconds: Number
+    :return: format time
+    """
+    if seconds:
+        if get_number_length(int(seconds)) > 10:
+            seconds = int(str(seconds[:10]))
+    else:
+        seconds = time.time()
+    return time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(seconds))
 
 
 def download(url, songName, headers={}):
@@ -15,6 +37,15 @@ def download(url, songName, headers={}):
     song_url = parent_path + '/' + songName
     with open(song_url, 'wb') as m:
         m.write(music.content)
+
+
+def has_field(params, field):
+    """验证字典中的字段是否存在"""
+
+    assert type(params) == dict
+
+    verify = lambda field: True if field in params.keys() else False
+    return verify(field)
 
 
 _ARG_DEFAULT = object()
@@ -37,14 +68,16 @@ def format_url(data={}):
     :return: String
     """
     format_str = ''
+    param = []
     if data:
-        for key in data.keys():
-            format_str = format_str + '&' + key + '=' + str(data[key])
+        for k, v in data.items():
+            param.append('{0}={1}'.format(k, str(v)))
+        format_str = '&'.join(param)
     return format_str
 
 
 def find_domain(url):
-    pattern = r"http[s]*://[a-z0-9]+\.([a-z0-9]+(-[a-z0-9]+)*\.+[a-z]{2,}\b)"
+    pattern = r"http[s]*://[a-z0-9]+\.([a-z0-9]+(-[a-z0-9]+)*\.+[a-z]{2,}\.*([a-z]{2,})*)\b"
     domain = find_one_string(pattern=pattern, content=unquote(url))
     if not domain:
         return find_one_string(pattern=pattern, content=unquote(url))
@@ -92,13 +125,17 @@ class WebSite(object):
         return self.driver.urlopen(req).read().decode('utf-8')
 
     @staticmethod
-    def web_fetch2(url, method='GET', headers=None, data=None, cookies=None, allow_redirects=True):
+    def web_fetch2(url, method='GET', headers=None, data=None, cookies=None, allow_redirects=True, decode=None):
         # 采用常规requests请求
         if allow_redirects is False:
             return requests.head(url, headers=headers, cookies=cookies, allow_redirects=allow_redirects)
         if method == 'GET':
-            return requests.get(url, headers=headers, cookies=cookies, allow_redirects=allow_redirects).text
-        return requests.post(url, headers=headers, data=data, cookies=cookies, allow_redirects=allow_redirects).text
+            res = requests.get(url, headers=headers, cookies=cookies, allow_redirects=allow_redirects)
+        else:
+            res = requests.post(url, headers=headers, data=data, cookies=cookies, allow_redirects=allow_redirects)
+        if decode:
+            return res.content.decode(decode)
+        return res.text
 
     def close(self):
         if self.webDriver is True:
