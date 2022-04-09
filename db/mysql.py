@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
 import settings
+from functools import wraps
 
 
 mysql_host = settings.mysql_host
@@ -19,6 +20,17 @@ BaseModel = declarative_base(engine)
 sessions = scoped_session(sessionmaker(bind=engine))
 
 session = sessions()
+
+
+def engine_wrapper(func):
+    @wraps(func)
+    def _wrapper(self, *args, **kwargs):
+        sessions = sessionmaker(bind=engine)
+        conn = sessions()
+        response = func(self, conn=conn)
+        conn.close()
+        return response
+    return _wrapper
 
 
 if __name__ == '__main__':

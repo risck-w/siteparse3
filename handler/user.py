@@ -2,11 +2,15 @@
 
 import tornado.web
 from tornado.gen import coroutine
-from tornado import concurrent
-from db.mysql import sessions
+from tornado.concurrent import Future
+from db.mysql import sessions, engine_wrapper
 from models.users import User
 import json
 import datetime
+from Utils.jwtSign import encode_auth_token, decode_auth_token
+from db.redis import redis
+import secrets
+import settings
 
 
 class user_login_handler(tornado.web.RequestHandler):
@@ -17,29 +21,42 @@ class user_login_handler(tornado.web.RequestHandler):
         self.set_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
         self.set_header('Content-Type', 'application/json; charset=UTF-8')
 
-    def post(self, *args, **kwargs):
+    @engine_wrapper
+    async def post(self, conn, *args, **kwargs):
         username = json.loads(self.request.body)['username']
         password = json.loads(self.request.body)['password']
 
         self.set_header("Content-type", 'application/json')
 
-        session = sessions()
-
-        user = session.query(User).filter_by(username=username).first()
+        user = await self.jwt(conn, username)
         if user is None:
-            self.write({'status': 2, 'message': '用户不存在', 'username': username})
+            self.write({'status': 2, 'message': '用户不存在'})
             return None
 
         if user.password == password:
-            self.write({'status': 0, 'message': '验证成功', 'username': username, '_id': user.id})
+            try:
+                auth_token = await encode_auth_token(user)
+                sessionid = secrets.token_urlsafe(16)
+
+                redis.setex(sessionid, settings.SESSION_EXPIRE_TIME, auth_token)
+
+                self.set_cookie('sessionid', sessionid)
+
+                self.write({'status': 0, 'message': '验证成功', 'username': username, 'token': auth_token})
+            except Exception as e:
+                self.write({'status': 1, 'message': '验证失败'})
         else:
             self.write({'status': 1, 'message': '用户名或密码不正确'})
+
+    async def jwt(self, conn, username):
+        user = conn.query(User).filter_by(username=username).first()
+        return user
 
     def options(self, *args, **kwargs):
         self.set_status(204)
         self.finish()
 
-    def get(self, *args, **kwargs):
+    async def get(self, *args, **kwargs):
         self.write_error(404)
 
 

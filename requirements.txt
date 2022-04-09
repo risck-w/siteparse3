@@ -10,3 +10,4 @@ gevent==20.6.2
 beautifulsoup4==4.4.0
 pandas==1.1.2
 jieba==0.42.1
+pyjwt==2.0.1

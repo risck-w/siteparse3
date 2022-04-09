@@ -1,5 +1,15 @@
 debug = False
 
+"""
+    session expire time
+"""
+SESSION_EXPIRE_TIME = 3600
+
+
+"""
+    jwt secret
+"""
+secret = 'GioIPy+fSVelsNacIfyBnnnc5LPwX0J0uaRQLoxJASY='
 
 """
     定时任务时间间隔(主要用于分词队列)，时间单位：分钟

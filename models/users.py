@@ -12,6 +12,8 @@ class User(BaseModel):
     password = Column(String(16), nullable=False, comment='密码')
     username = Column(String(16), nullable=False, unique=True, comment='用户名')
     telphone = Column(String(11), nullable=True, comment='手机号')
+    status = Column(Integer, nullable=False, comment='用户状态')
+    login_status = Column(Integer, nullable=False, comment='当前登录状态')
     login_date = Column(DateTime, default=datetime.datetime.now(), comment='最近登录时间')
     sign_date = Column(DateTime, comment='注册时间')
     logout_date = Column(DateTime, comment='最近退出时间')
@@ -39,6 +41,8 @@ class User(BaseModel):
                 'username': self.username,
                 'password': self.password,
                 'telphone': self.telphone,
+                'status': str(self.status),
+                'login_status': str(self.login_status),
                 'sign_date': self.sign_date,
                 'login_date': str(self.login_date),
                 'logout_date': str(self.logout_date),
