@@ -12,10 +12,11 @@ from models.products import ParseLog, ReqUrlNameMapping, HotWords
 from Utils.logs import logger
 from Utils.Utils import has_field
 from db.redis import CreateQueue
-from sqlalchemy.sql import func
 import json
 import math
-import time
+
+from tasks import hello
+from celery.result import AsyncResult
 
 
 class Top_HotWebSite_Handler(tornado.web.RequestHandler):
@@ -189,3 +190,22 @@ class crawler_handler(tornado.web.RequestHandler):
                 session.close()
             except Exception as e:
                 logger.error('Insert record info error: %s: %s' % (params['url'], e))
+
+
+class Hello_handler(tornado.web.RequestHandler):
+
+    async def get(self, *args, **kwargs):
+        msg = hello.hello.delay(2, 3)
+        """AsyncResult.get方法会阻塞任务的异步执行
+        所以得出结论：Celery的使用局限于无返回结果要求的业务场景
+        """
+        result = AsyncResult(msg).get(timeout=10)  # seconds
+        if result is not None:
+            self.write({'code': 0, 'msg': result})
+        else:
+            self.write({'code': 1, 'msg': 'No result'})
+
+
+class Noblock_handler(tornado.web.RequestHandler):
+    async def get(self, *args, **kwargs):
+        self.write({'code': 0, 'msg': 0})
