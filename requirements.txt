@@ -13,4 +13,8 @@ jieba==0.42.1
 pyjwt==2.0.1
 python3-pika==0.9.14
 celery==5.2.6
+pydantic==2.10.5
+httpx==0.28.1
+volcengine-python-sdk==1.0.121
+cryptography==43.0.3
 

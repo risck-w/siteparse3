@@ -1,4 +1,5 @@
 # coding=utf-8
+import logging
 
 import tornado.web
 from tornado.gen import coroutine
@@ -33,7 +34,7 @@ class user_login_handler(tornado.web.RequestHandler):
             self.write({'status': 2, 'message': '用户不存在'})
             return None
 
-        if user.password == password:
+        if user.password == str(password):
             try:
                 auth_token = await encode_auth_token(user)
                 sessionid = secrets.token_urlsafe(16)

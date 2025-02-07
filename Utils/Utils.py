@@ -48,10 +48,29 @@ def has_field(params, field):
     return verify(field)
 
 
+async def async_has_field(params, field):
+    """验证字典中的字段是否存在"""
+
+    assert type(params) == dict
+
+    verify = lambda field: True if field in params.keys() else False
+    return verify(field)
+
+
 _ARG_DEFAULT = object()
 
 
 def get_arguments(self, default=_ARG_DEFAULT, strip=True):
+    params = {}
+    source = self.request.arguments
+    for name in source.keys():
+        value = self._get_argument(name, default, source, strip=strip)
+        params[name] = value
+
+    return params
+
+
+async def async_get_arguments(self, default=_ARG_DEFAULT, strip=True):
     params = {}
     source = self.request.arguments
     for name in source.keys():

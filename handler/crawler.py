@@ -6,17 +6,92 @@ import tornado.gen
 from spider.register import Sp
 from tornado.concurrent import run_on_executor
 from handler import executor
-from Utils.Utils import get_arguments
+from Utils.Utils import get_arguments, async_get_arguments
 from db.mysql import sessions
 from models.products import ParseLog, ReqUrlNameMapping, HotWords
 from Utils.logs import logger
-from Utils.Utils import has_field
+from Utils.Utils import has_field, async_has_field
 from db.redis import CreateQueue
 import json
 import math
+import os
+from volcenginesdkarkruntime import Ark
 
 from tasks import hello
 from celery.result import AsyncResult
+
+client = Ark(
+    api_key=os.environ.get('DOUBAO_ARK_API_KEY')
+)
+
+
+class AI_Agent_search_handler(tornado.web.RequestHandler):
+
+    def on_finish(self):
+        return super().on_finish()
+
+
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with,authorization,origin,content-type,accept")
+        self.set_header('Access-Control-Allow-Methods', 'GET POST')
+        self.set_header('Content-Type', 'text/event-stream; charset=utf-8')
+        # 不使用缓存
+        self.set_header('Content-Control', "no-cache")
+        # 保持长连接
+        self.set_header('Connection', "keep-alive")
+        self.set_header('X-Accel-Buffering', 'no')
+        # 禁用 Tornado 的自动压缩（SSE 不支持压缩）
+        self.set_header("Content-Encoding", "identity")
+
+    async def get(self):
+        params = await async_get_arguments(self)
+        field_valid = await async_has_field(params, 'parseType')
+        if field_valid and params['parseType'] == 'AIcontent':
+            if 'url' in params and params['url'] is not None:
+                stream = client.chat.completions.create(
+                    model='ep-20250102154256-z69t4',
+                    messages=[
+                        {'role': 'user', 'content': params['url']}
+                    ],
+                    extra_headers={'x-is-encrypted': 'true'},
+                    stream=True
+                )
+                # print(completion.choices[0].message.content)
+                for chunk in stream:
+                    if not chunk.choices:
+                        continue
+                    self.write(chunk.choices[0].delta.content + '\n')
+                    await self.flush()
+                return None
+        self.write({'code': '1', 'message': '请正确配置参数'})
+
+    async def post(self, *args, **kwargs):
+        url = json.loads(self.request.body)['url']
+        parseType = json.loads(self.request.body)['parseType']
+        try:
+            if parseType == 'AIcontent' and url is not None:
+                stream = client.chat.completions.create(
+                    model='ep-20250102154256-z69t4',
+                    messages=[
+                        {'role': 'user', 'content': url}
+                    ],
+                    extra_headers={'x-is-encrypted': 'true'},
+                    stream=True
+                )
+                # print(completion.choices[0].message.content)
+                for chunk in stream:
+                    if not chunk.choices:
+                        continue
+                    print(chunk.choices[0].delta.content)
+                    self.write(f'event:answer\ndata: ' + json.dumps({"message": chunk.choices[0].delta.content}) + f'\n\n')
+                    await self.flush()
+            else:
+                self.write({'code': '1', 'message': '请正确配置参数'})
+        except tornado.iostream.StreamClosedError:
+            print('client disconnected')
+        finally:
+            self.finish()
 
 
 class Top_HotWebSite_Handler(tornado.web.RequestHandler):
