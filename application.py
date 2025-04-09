@@ -4,9 +4,10 @@
 import os
 import tornado.web
 
-from urls import urls
+from urls import get_routers
 
 
-application = tornado.web.Application(
-    handlers=urls
-)
+def make_application():
+    return tornado.web.Application(
+        handlers=get_routers()
+    )

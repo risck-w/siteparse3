@@ -1,11 +1,24 @@
 import re
 import os
+import uuid
+
 import requests
+import httpx
 import time
 import math
 from Utils import createDriver
 from urllib import request
 from urllib.parse import unquote
+
+
+async def sync_get(url: str):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        return response
+
+
+def get_uuid():
+    return str(uuid.uuid4()).replace("-","")
 
 
 def get_number_length(number):

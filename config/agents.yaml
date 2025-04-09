@@ -1,0 +1,8 @@
+doubao:
+  agent_name: 'doubao'
+  api_key: '*'
+  model: '*'
+  base_url: '*'
+
+amap:
+  weather_key: '*'
