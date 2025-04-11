@@ -20,10 +20,9 @@ async def encode_auth_token(user):
             } # 内容一般存放用户id
         }
         auth_token = jwt.encode(payload=payload, key=settings.secret, algorithm='HS256')
+        return auth_token
     except Exception as e:
-        auth_token = e
-
-    return auth_token
+        raise Exception("Invalid token")
 
 
 async def decode_auth_token(auth_token):

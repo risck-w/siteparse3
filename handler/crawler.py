@@ -13,6 +13,7 @@ from db.mysql import sessions
 from models.products import ParseLog, ReqUrlNameMapping, HotWords
 from Utils.logs import logger
 from Utils.Utils import has_field, async_has_field
+from Utils.decotator import authenticated
 from db.redis import CreateQueue
 import json
 import math
@@ -47,10 +48,12 @@ class AI_Agent_search_handler(tornado.web.RequestHandler):
         self.set_status(400)
         self.finish()
 
+    @authenticated
     async def post(self, *args, **kwargs):
         url = json.loads(self.request.body)['url']
         parse_type = json.loads(self.request.body)['parseType']
         conversation_id = json.loads(self.request.body)['conversation_id']
+        user_id = self.current_user['id']
         stream = False
         try:
             if parse_type == 'AIcontent' and url is not None:

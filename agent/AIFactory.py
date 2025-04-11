@@ -17,6 +17,8 @@ client_map = {
     'doubao': DoubaoClient
 }
 
+
+
 class Conversation(object):
 
     """上下文会话管理类"""
@@ -166,7 +168,7 @@ async def run_in_pool(client: BaseClient, configuration: dict = {}, stream: bool
 
     loop = asyncio.get_event_loop()
     manager = multiprocessing.Manager()
-    queue = multiprocessing.Queue()
+    queue = manager.Queue()
 
     try:
         with multiprocessing.Pool(1) as pool:
