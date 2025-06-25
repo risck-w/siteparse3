@@ -6,3 +6,4 @@ doubao:
 
 amap:
   weather_key: '*'
+  weather_url: '*''

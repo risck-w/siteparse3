@@ -25,7 +25,7 @@ def authenticated(func):
         except Exception as e:
             logger.error(f"用户信息验证错误: {e}")
             self.set_status(401)
-            self.write({'error': 'Token has expired'})
+            self.write({'code': '00401', 'error': 'Token has expired'})
             return
 
         # 验证函数类型，继续执行处理方法

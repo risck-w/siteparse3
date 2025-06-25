@@ -7,7 +7,7 @@ import tornado.gen
 
 from agent.client import DoubaoClient, BaseClient
 from Utils.Utils import get_uuid
-from db.redis import redis
+from db.redis import redis, CreateQueue
 from config import get_prompt
 from config import get_configuration
 from Utils.logs import logger
@@ -23,14 +23,17 @@ class Conversation(object):
 
     """上下文会话管理类"""
     def __init__(self, conversation_id: str = None,
+                 user_id: str = None,
                  module: str = None,
                  prompt: str = 'intention',
                  enable_history: bool = False,
                  max_history_num: int = 10,
                  history_expire: int = 600
+
                  ):
         """
         :param conversation_id (str): 会话id，默认为16位ID
+        :param user_id (str): 用户id，默认为None
         :param module (str): 会话模型，默认为None
         :param prompt (str): role:user prompt，默认为intention
         :param enable_history (bool): 是否开启上下文对话，默认False
@@ -43,6 +46,7 @@ class Conversation(object):
         """
         self.msg_list = []
         self.conversation_id = conversation_id or get_uuid()
+        self.user_id = user_id
         self.prompt = prompt
         self.enable_history = enable_history
         self.max_history_num = max_history_num
@@ -69,14 +73,15 @@ class Conversation(object):
             if msg_history_data:
                 self.msg_list = json.loads(msg_history_data)
             self.msg_list.append(self.user_messages_params)
-            self.msg_list = [self.sys_prompt] + self.msg_list[1:][-int(self.max_history_num):]
             redis.set(self.conversation_id, json.dumps(self.msg_list), ex=self.history_expire)
+            self.msg_list = [self.sys_prompt] + self.msg_list[-int(self.max_history_num):]
         else:
             self.msg_list.append(self.sys_prompt)
             self.msg_list.append(self.user_messages_params)
 
         self.agents_configuration['conversation_id'] = self.conversation_id
         self.agents_configuration['conversation'] = self.msg_list
+        self.agents_configuration['user_id'] = self.user_id
         self.agents_configuration['prompt'] = self.sys_prompt
         self.agents_configuration['extra_headers'] = {'x-is-encrypted': 'true'}
         return self.conversation_id, self.agents_configuration
@@ -98,6 +103,61 @@ class Conversation(object):
         self.agents_configuration['prompt'] = self.sys_prompt
         self.agents_configuration['conversation'] = self.msg_list
         return self.conversation_id, self.agents_configuration
+
+
+async def intent_engine(url: str, conversation_id: str, user_id: str, stream: str = True):
+    # 理解用户意图
+    conversation = Conversation(conversation_id=conversation_id, user_id=user_id, module='doubao', prompt='intention',
+                                enable_history=True)
+    conversation_id, cov_configuration = conversation.build_messages(message=str(url), intent_prompt=True)
+    queue_name = await build_agent(configuration=cov_configuration, stream=stream)
+    completion = CreateQueue(queue_name)
+    while True:
+        chunk = json.loads(completion.pop())
+        if chunk is None:
+            break
+        if isinstance(chunk, dict) and "error" in chunk:
+            # 如果是dict类型，则是错误信息，发送错误并结束请求
+            yield {"id": conversation_id, "message": '未理解您的意思，您可以把问题描述的再详细一点~', 'error': '1'}
+            break
+        if chunk.get('done') is True:
+            break
+        yield chunk.get('message')
+
+
+async def agi_engine(url: str, conversation_id: str, user_id: str, stream: str = True):
+    conversation = Conversation(conversation_id=conversation_id, user_id=user_id, module='doubao', prompt='agi',
+                                enable_history=False)
+    conversation_id, cov_configuration = conversation.build_messages(message=str(url), intent_prompt=False)
+    queue_name = await build_agent(configuration=cov_configuration, stream=stream)
+    completion = CreateQueue(queue_name)
+    if stream:
+        while True:
+            chunk = json.loads(completion.pop())
+            if chunk is None:
+                break
+            if isinstance(chunk, dict) and "error" in chunk:
+                # 如果是dict类型，则是错误信息，发送错误并结束请求
+                yield {"id": conversation_id, "message": '未理解您的意思，您可以把问题描述的再详细一点~', 'error': '1'}
+                break
+            if chunk.get('done') is True:
+                break
+            yield {"id": conversation_id, "message": chunk.get("message")}
+        yield {"id": conversation_id, 'message': '[DONE]'}
+    else:
+        yield {"id": conversation_id, "message": completion}
+
+
+async def crawler_engine(url: str, conversation_id: str, user_id: str, stream: str = True):
+    """
+    爬虫引擎, 调用爬虫框架
+    :param url: 意图
+    :param conversation_id:
+    :param user_id:
+    :param stream:
+    :return:
+    """
+    pass
 
 
 def call_agent(client: BaseClient, configuration: dict = {}, stream: bool = False, queue: Queue = None):
@@ -122,14 +182,14 @@ def call_agent(client: BaseClient, configuration: dict = {}, stream: bool = Fals
         )
         if stream:
             for chunk in completion:
-                queue.put(chunk.choices[0].delta.content)
+                queue.push(json.dumps({"message": chunk.choices[0].delta.content, "done": False}))
         else:
-            queue.put(completion.choices[0].message.content)
+            queue.push(json.dumps({"message": completion.choices[0].message.content, "done": False}))
     except Exception as e:
-        queue.put_nowait({"error": f"call_agent {str(e)}"})
+        queue.push(json.dumps({"error": f"call_agent {str(e)}", "done": True}))
     finally:
         # 发送结束信号
-        queue.put_nowait(None)
+        queue.push(json.dumps({'done': True}))
 
 
 def _call_agent(client: BaseClient, configuration: dict = {}, stream: bool = False):
@@ -167,13 +227,13 @@ async def run_in_pool(client: BaseClient, configuration: dict = {}, stream: bool
     """
 
     loop = asyncio.get_event_loop()
-    manager = multiprocessing.Manager()
-    queue = manager.Queue()
+    queue_name = f"model:{configuration['user_id']}:{configuration['conversation_id']}"
+    queue = CreateQueue(queue_name)
 
     try:
         with multiprocessing.Pool(1) as pool:
             await loop.run_in_executor(None, pool.apply, call_agent, (client, configuration, stream, queue))
-            return manager, queue
+            return queue_name
     except Exception as e:
         print(e)
         return {"error": str(e)}
@@ -186,7 +246,7 @@ async def build_agent(configuration: dict, stream: bool = False):
     agent_client = client_map[agent_name]
     logger.info(f"用户调用模型：{agent_name}, 配置获取完成, 开始处理任务")
     logger.info(configuration["conversation"])
-    manager, queue = await run_in_pool(agent_client, configuration, stream)
+    queue_name = await run_in_pool(agent_client, configuration, stream)
     logger.info(f"用户调用模型：{agent_name}, 任务处理完成")
-    return manager, queue
+    return queue_name
 

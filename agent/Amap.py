@@ -38,7 +38,6 @@ async def search_weather(location: str = '济南市', date: str = None, extensio
         'output': output
     }
     params = format_url(json_params)
-    print(weather_url+params)
     try:
         http_client = AsyncHTTPClient()
         response = await http_client.fetch(weather_url+params, validate_cert=False)

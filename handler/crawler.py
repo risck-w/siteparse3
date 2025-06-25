@@ -20,8 +20,7 @@ import math
 from tasks import hello
 from celery.result import AsyncResult
 
-from config import get_configuration
-from agent.AIFactory import build_agent, Conversation
+from agent.AIFactory import intent_engine, agi_engine
 from agent.Amap import search_weather, agent_distribute
 
 
@@ -54,77 +53,38 @@ class AI_Agent_search_handler(tornado.web.RequestHandler):
         parse_type = json.loads(self.request.body)['parseType']
         conversation_id = json.loads(self.request.body)['conversation_id']
         user_id = self.current_user['id']
-        stream = False
         try:
             if parse_type == 'AIcontent' and url is not None:
                 # 理解用户意图
-                conversation = Conversation(conversation_id=conversation_id, module='doubao', prompt='intention', enable_history=True)
-                conversation_id, cov_configuration = conversation.build_messages(message=str(url), intent_prompt=True)
-                manager_q, completion = await build_agent(configuration=cov_configuration, stream=stream)
-                intent_content = None
-                while True:
-                    chunk = completion.get()
-                    if chunk is None:
-                        manager_q.shutdown()
-                        break
+                async for chunk in intent_engine(url=url, conversation_id=conversation_id, user_id=user_id, stream=False):
                     if isinstance(chunk, dict) and "error" in chunk:
                         # 如果是dict类型，则是错误信息，发送错误并结束请求
-                        self.write(f'event:answer\ndata: ' + json.dumps({"id": conversation_id, "message": '未理解您的意思，您可以把问题描述的再详细一点~'}) + f'\n\n')
+                        self.write(f'event:answer\ndata: ' + json.dumps(chunk) + f'\n\n')
                         await self.flush()
-                        manager_q.shutdown()
-                        break
                     intent_content = chunk
-
                 logger.info(f"用户意图：{intent_content}")
                 intent_content = json.loads(intent_content)
                 user_intent = intent_content.get('user_intent')
+
                 if user_intent and user_intent == '查询天气':
                     city = intent_content['data']['location']
                     date = intent_content['data']['date']
                     if city:
                         all_weather_data = await search_weather(location=city)
                         weather_model = await agent_distribute(all_weather_data)
-                        self.write(f'event:answer\ndata: '
-                                   + json.dumps({"id": conversation_id, "message": weather_model})
-                                   + f'\n\n')
+                        self.write(f'event:answer\ndata: ' + json.dumps({"id": conversation_id, "message": weather_model}) + f'\n\n')
                         await self.flush()
                     else:
-                        self.write(f'event:answer\ndata: '
-                                   + json.dumps({"id": conversation_id, "message": '请告知我待查询天气的城市~'})
-                                   + f'\n\n')
+                        self.write(f'event:answer\ndata: ' + json.dumps({"id": conversation_id, "message": '请告知我待查询天气的城市~'}) + f'\n\n')
                         await self.flush()
                 else:
                     logger.info(f"调用模型：根据用户意图，重新回答用户问题")
-                    stream = True
-                    conversation = Conversation(conversation_id=conversation_id, module='doubao', prompt='agi', enable_history=False)
-                    conversation_id, cov_configuration = conversation.build_messages(message=str(url), intent_prompt=False)
-                    manager_q, completion = await build_agent(configuration=cov_configuration, stream=stream)
-                    if stream:
-                        while True:
-                            chunk = completion.get()
-                            if chunk is None:
-                                manager_q.shutdown()
-                                break
-                            if isinstance(chunk, dict) and "error" in chunk:
-                                # 如果是dict类型，则是错误信息，发送错误并结束请求
-                                self.write(f'event:answer\ndata: ' + json.dumps(
-                                    {"id": conversation_id, "message": '未理解您的意思，您可以把问题描述的再详细一点~'}) + f'\n\n')
-                                await self.flush()
-                                manager_q.shutdown()
-                                break
-                            self.write(f'event:answer\ndata: '
-                                       + json.dumps({"id": conversation_id, "message": chunk})
-                                       + f'\n\n')
-                            await self.flush()
-                        self.write(f"event:answer\ndata: "
-                                       + json.dumps({"id": conversation_id, 'message': '[DONE]'})
-                                       + f"\n\n")
+                    async for chunk in agi_engine(url=url, conversation_id=conversation_id, user_id=user_id, stream=True):
+                        self.write(f"event:answer\ndata: " + json.dumps(chunk) + f"\n\n")
                         await self.flush()
-                    else:
-                        self.write({"id": conversation_id, "message": completion})
-                manager_q.shutdown()
             else:
                 self.write({'code': '1', 'message': '请正确配置参数'})
+                await self.flush()
         except Exception as e:
             self.set_status(500)
             self.write({"error": str(e)})

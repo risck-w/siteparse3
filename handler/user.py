@@ -14,6 +14,21 @@ import secrets
 import settings
 
 
+class user_logout_handler(tornado.web.RequestHandler):
+
+    def set_default_headers(self) -> None:
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with,authorization,origin,content-type,accept")
+        self.set_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.set_header('Content-Type', 'application/json; charset=UTF-8')
+
+    async def post(self, *args, **kwargs):
+        token = json.loads(self.request.body).get('token')
+        if token:
+            redis.delete(token)
+        self.set_status(200)
+
+
 class user_login_handler(tornado.web.RequestHandler):
 
     def set_default_headers(self):
